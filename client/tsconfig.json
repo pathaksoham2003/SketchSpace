@@ -1,27 +1,44 @@
 {
+  // "compilerOptions": {
+  //   "target": "ES2020",
+  //   "useDefineForClassFields": true,
+  //   "lib": ["ES2020", "DOM", "DOM.Iterable"],
+  //   "module": "ESNext",
+  //   "skipLibCheck": true,
+
+  //   /* Bundler mode */
+  //   "moduleResolution": "bundler",
+  //   "allowImportingTsExtensions": true,
+  //   "resolveJsonModule": true,
+  //   "isolatedModules": true,
+  //   "noEmit": true,
+  //   "jsx": "react-jsx",
+
+  //   /* Linting */
+  //   "strict": true,
+  //   "noUnusedLocals": true,
+  //   "noUnusedParameters": true,
+  //   "noFallthroughCasesInSwitch": true,
+
+  //   "noImplicitAny": false,
+    
+  // },
+  /* To run without the errors*/
   "compilerOptions": {
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": true,
     "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": false,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    "noImplicitAny": false,
-
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

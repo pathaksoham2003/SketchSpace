@@ -37,7 +37,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
-    "suppressImplicitAnyIndexErrors": true,
+    "noImplicitAny": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],

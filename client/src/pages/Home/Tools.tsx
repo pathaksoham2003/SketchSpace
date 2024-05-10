@@ -1,22 +1,17 @@
-import React, { useState, Fragment } from "react";
+import { useState, Fragment } from "react";
 import Wheel from "@uiw/react-color-wheel";
 import {
   CornerUpLeft,
   CornerUpRight,
   Download,
   Edit2,
-  Edit3,
   MessageCircle,
   Minus,
   Move,
-  PenTool,
-  RotateCw,
   Square,
   Type,
-  XSquare,
 } from "react-feather";
 import { hsvaToHex } from "@uiw/color-convert";
-import useHistory from "../../hooks/useHistory";
 
 function Tools({ color, setColor, setTool, setSize, undo, redo }) {
   const [showWheel, setWheel] = useState(false);

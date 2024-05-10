@@ -1,29 +1,30 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import rough from "roughjs/bundled/rough.esm";
 import {
+  Coordinate,
+  Element,
   adjustElementCoordinates,
   adjustmentRequired,
   createElement,
   cursorForPosition,
   drawElement,
   getElementAtPosition,
-  positionWithinElement,
   resizedCoordinates,
 } from "../../util/utils";
 import usePressedKeys from "../../hooks/usePressedKeys";
+import { RoughCanvas } from "roughjs/bin/canvas";
 
 const Canvas = ({
   elements,
   setElements,
   undo,
   redo,
-  setTool,
   tool,
   socket,
 }) => {
   const [action, setAction] = useState("none");
-  const [selectedElement, setSelectedElement] = useState(null);
-  const [panOffset, setPanOffset] = React.useState({ x: 0, y: 0 });
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const [panOffset, setPanOffset] = React.useState<Coordinate>({ x: 0, y: 0 });
   const [startPanMousePosition, setStartPanMousePosition] = React.useState({
     x: 0,
     y: 0,
@@ -64,9 +65,9 @@ const Canvas = ({
   };
 
   useLayoutEffect(() => {
-    const canvas = document.getElementById("canvas");
-    const context = canvas.getContext("2d");
-    const roughCanvas = rough.canvas(canvas);
+    const canvas: HTMLCanvasElement  = document.getElementById("canvas") as HTMLCanvasElement;
+    const context :CanvasRenderingContext2D = canvas.getContext("2d")!;
+    const roughCanvas :RoughCanvas = rough.canvas(canvas);
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -74,7 +75,7 @@ const Canvas = ({
     context.translate(panOffset.x, panOffset.y);
 
     elements.forEach((element) => {
-      if (action === "writing" && selectedElement.id === element.id) return;
+      if (action === "writing" && selectedElement!.id === element.id) return;
       drawElement(roughCanvas, context, element);
     });
     context.restore();
@@ -98,7 +99,7 @@ const Canvas = ({
   }, [undo, redo]);
 
   useEffect(() => {
-    const panFunction = (event) => {
+    const panFunction = (event: WheelEvent) => {
       setPanOffset((prevState) => ({
         x: prevState.x - event.deltaX,
         y: prevState.y - event.deltaY,
@@ -116,7 +117,7 @@ const Canvas = ({
     if (action === "writing") {
       setTimeout(() => {
         textArea.focus();
-        textArea.value = selectedElement.text;
+        textArea.value = selectedElement!.text;
       }, 0);
     }
   }, [action, selectedElement]);
@@ -297,14 +298,14 @@ const Canvas = ({
           onBlur={handleBlur}
           style={{
             position: "fixed",
-            top: selectedElement.y1 - 2 + panOffset.y,
-            left: selectedElement.x1 + panOffset.x,
+            top: selectedElement!.y1 - 2 + panOffset.y,
+            left: selectedElement!.x1 + panOffset.x,
             font: "24px sans-serif",
             margin: 0,
             padding: 0,
             border: 0,
             outline: 0,
-            resize: "auto",
+            resize:"both",
             overflow: "hidden",
             whiteSpace: "pre",
             background: "transparent",
@@ -326,5 +327,9 @@ const Canvas = ({
     </div>
   );
 };
+
+Canvas.prototype = {
+  
+}
 
 export default Canvas;

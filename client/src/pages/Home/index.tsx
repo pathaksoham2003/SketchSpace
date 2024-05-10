@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AuthLayout from "../../layout/AuthLayout";
 import useHistory from "../../hooks/useHistory";
 import Tools from "./Tools";
@@ -12,7 +12,7 @@ const Home = () => {
   const [tool, setTool] = useState<string>("rectangle");
   const [size, setSize] = useState<number>(0);
   const [color, setColor] = useState({ h: 214, s: 43, v: 90, a: 1 });
-
+  
   useEffect(() => {
     if (isRun.current) return;
     isRun.current = true;

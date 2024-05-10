@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-const useHistory = (initialState) => {
-  const [index, setIndex] = useState(0);
-  const [history, setHistory] = useState([initialState]);
-
-  const setState = (action, overwrite = false) => {
+const useHistory = (initialState:Array<any>) => {
+  const [index, setIndex] = useState<number>(0);
+  const [history, setHistory] = useState<Array<any>>([initialState]);
+  console.log(history);
+  const setState = (action:string, overwrite = false) => {
     const newState =
       typeof action === "function" ? action(history[index]) : action;
     if (overwrite) {

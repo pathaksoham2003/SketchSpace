@@ -1,9 +1,37 @@
 import getStroke from "perfect-freehand";
+import { RoughCanvas } from "roughjs/bin/canvas";
+import { RoughGenerator } from "roughjs/bin/generator";
 import rough from "roughjs/bundled/rough.esm";
 
-export const generator = rough.generator();
+const generator: RoughGenerator = rough.generator();
 
-export const getSvgPathFromStroke = (stroke) => {
+type Stroke = number[][];
+
+export interface Coordinate {
+  x:number,
+  y:number,
+}
+
+interface Coordinates {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface Element {
+  id: string;
+  type: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  roughElement?: any; // Adjust this type as per the actual type of roughElement
+  points?: { x: number; y: number }[];
+  text?: string;
+}
+
+export const getSvgPathFromStroke = (stroke: Stroke) => {
   if (!stroke.length) return "";
 
   const d = stroke.reduce(
@@ -19,25 +47,30 @@ export const getSvgPathFromStroke = (stroke) => {
   return d.join(" ");
 };
 
-export const resizedCoordinates = (clientX, clientY, position, coordinates) => {
-    const { x1, y1, x2, y2 } = coordinates;
-    switch (position) {
-      case "tl":
-      case "start":
-        return { x1: clientX, y1: clientY, x2, y2 };
-      case "tr":
-        return { x1, y1: clientY, x2: clientX, y2 };
-      case "bl":
-        return { x1: clientX, y1, x2, y2: clientY };
-      case "br":
-      case "end":
-        return { x1, y1, x2: clientX, y2: clientY };
-      default:
-        return null; //should not really get here...
-    }
-  };
+export const resizedCoordinates = (
+  clientX: number,
+  clientY: number,
+  position: string,
+  coordinates: Coordinates
+) => {
+  const { x1, y1, x2, y2 } = coordinates;
+  switch (position) {
+    case "tl":
+    case "start":
+      return { x1: clientX, y1: clientY, x2, y2 };
+    case "tr":
+      return { x1, y1: clientY, x2: clientX, y2 };
+    case "bl":
+      return { x1: clientX, y1, x2, y2: clientY };
+    case "br":
+    case "end":
+      return { x1, y1, x2: clientX, y2: clientY };
+    default:
+      return null; //should not really get here...
+  }
+};
 
-export const drawElement = (roughCanvas, context, element) => {
+export const drawElement = (roughCanvas:RoughCanvas, context, element) => {
   switch (element.type) {
     case "line":
     case "rectangle":
@@ -57,10 +90,20 @@ export const drawElement = (roughCanvas, context, element) => {
   }
 };
 
-export const distance = (a, b) =>
-  Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+export const distance = (
+  a: { x: number; y: number },
+  b: { x: number; y: number }
+) => Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 
-export const onLine = (x1, y1, x2, y2, x, y, maxDistance = 1) => {
+export const onLine = (
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x: number,
+  y: number,
+  maxDistance: number = 1
+) => {
   const a = { x: x1, y: y1 };
   const b = { x: x2, y: y2 };
   const c = { x, y };
@@ -68,12 +111,22 @@ export const onLine = (x1, y1, x2, y2, x, y, maxDistance = 1) => {
   return Math.abs(offset) < maxDistance ? "inside" : null;
 };
 
-export const nearPoint = (x, y, x1, y1, name) => {
+export const nearPoint = (
+  x: number,
+  y: number,
+  x1: number,
+  y1: number,
+  name: string
+) => {
   return Math.abs(x - x1) < 5 && Math.abs(y - y1) < 5 ? name : null;
 };
 
-export const positionWithinElement = (x, y, element) => {
-  const { type, x1, x2, y1, y2 } = element;
+export const positionWithinElement = (
+  x: number,
+  y: number,
+  element: Element
+) => {
+  const { type, x1, x2, y1, y2, points } = element;
   switch (type) {
     case "line":
       const on = onLine(x1, y1, x2, y2, x, y);
@@ -85,17 +138,21 @@ export const positionWithinElement = (x, y, element) => {
       const topRight = nearPoint(x, y, x2, y1, "tr");
       const bottomLeft = nearPoint(x, y, x1, y2, "bl");
       const bottomRight = nearPoint(x, y, x2, y2, "br");
-      const inside = x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
+      const inside =
+        x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
       return topLeft || topRight || bottomLeft || bottomRight || inside;
     case "pencil":
-      const betweenAnyPoint = element.points.some((point, index) => {
-        const nextPoint = element.points[index + 1];
-        if (!nextPoint) return false;
-        return (
-          onLine(point.x, point.y, nextPoint.x, nextPoint.y, x, y, 5) != null
-        );
-      });
-      return betweenAnyPoint ? "inside" : null;
+      if (points) {
+        const betweenAnyPoint = points.some((point, index) => {
+          const nextPoint = points[index + 1];
+          if (!nextPoint) return false;
+          return (
+            onLine(point.x, point.y, nextPoint.x, nextPoint.y, x, y, 5) != null
+          );
+        });
+        return betweenAnyPoint ? "inside" : null;
+      }
+      return null;
     case "text":
       return x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
     default:
@@ -103,42 +160,14 @@ export const positionWithinElement = (x, y, element) => {
   }
 };
 
-export const getElementAtPosition = (x, y, elements) => {
+
+export const getElementAtPosition = (x: number, y: number, elements) => {
   return elements
     .map((element) => ({
       ...element,
       position: positionWithinElement(x, y, element),
     }))
     .find((element) => element.position !== null);
-};
-
-export const updateElement = (id, x1, y1, x2, y2, type, options) => {
-  const elementsCopy = [...elements];
-
-  switch (type) {
-    case "line":
-    case "rectangle":
-      elementsCopy[id] = createElement(id, x1, y1, x2, y2, type);
-      break;
-    case "pencil":
-      elementsCopy[id].points = [...elementsCopy[id].points, { x: x2, y: y2 }];
-      break;
-    case "text":
-      const textWidth = document
-        .getElementById("canvas")
-        .getContext("2d")
-        .measureText(options.text).width;
-      const textHeight = 24;
-      elementsCopy[id] = {
-        ...createElement(id, x1, y1, x1 + textWidth, y1 + textHeight, type),
-        text: options.text,
-      };
-      break;
-    default:
-      throw new Error(`Type not recognised: ${type}`);
-  }
-
-  setElements(elementsCopy, true);
 };
 
 export const adjustElementCoordinates = (element) => {
@@ -158,7 +187,7 @@ export const adjustElementCoordinates = (element) => {
   }
 };
 
-export const cursorForPosition = (position) => {
+export const cursorForPosition = (position: string) => {
   switch (position) {
     case "tl":
     case "br":
@@ -173,7 +202,14 @@ export const cursorForPosition = (position) => {
   }
 };
 
-export const createElement = (id, x1, y1, x2, y2, type) => {
+export const createElement = (
+  id: string,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  type: string
+) : Element => {
   switch (type) {
     case "line":
       return {
@@ -196,7 +232,7 @@ export const createElement = (id, x1, y1, x2, y2, type) => {
         roughElement: generator.rectangle(x1, y1, x2 - x1, y2 - y1),
       };
     case "pencil":
-      return { id, type, points: [{ x: x1, y: y1 }] };
+      return { id, type, points: [{ x: x1, y: y1 }],x1,y1,x2:x1,y2:y1 };
     case "text":
       return { id, type, x1, y1, x2, y2, text: "" };
     default:
@@ -204,5 +240,5 @@ export const createElement = (id, x1, y1, x2, y2, type) => {
   }
 };
 
-
-export const adjustmentRequired = (type) => ["line", "rectangle"].includes(type);
+export const adjustmentRequired = (type) =>
+  ["line", "rectangle"].includes(type);

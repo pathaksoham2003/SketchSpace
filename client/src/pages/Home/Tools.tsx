@@ -59,7 +59,9 @@ function Tools({ color, setColor, setTool, setSize, undo, redo }) {
           id="points"
           name="points"
           min="0"
-          max="10"
+          max="12"
+          step="1"
+          defaultValue="3"
         ></input>
         <Edit2 size={25} onClick={() => setTool("pencil")} />
         <Minus style={{transform:'rotate(-45deg)'}} size={25} onClick={() => setTool("line")} />

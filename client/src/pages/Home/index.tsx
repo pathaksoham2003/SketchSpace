@@ -10,9 +10,9 @@ const Home = () => {
   const socket = useRef<Socket | null>(null);
   const [elements, setElements, undo, redo] = useHistory([]);
   const [tool, setTool] = useState<string>("rectangle");
-  const [size, setSize] = useState<number>(0);
+  const [size, setSize] = useState<number>(3);
   const [color, setColor] = useState({ h: 214, s: 43, v: 90, a: 1 });
-  
+
   useEffect(() => {
     if (isRun.current) return;
     isRun.current = true;
@@ -31,8 +31,9 @@ const Home = () => {
         undo={undo}
         redo={redo}
         tool={tool}
-        setTool={setTool}
         socket={socket}
+        size={size}
+        color={color}
       />
       <Tools
         color={color}

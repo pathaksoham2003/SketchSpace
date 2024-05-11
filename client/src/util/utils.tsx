@@ -8,8 +8,8 @@ const generator: RoughGenerator = rough.generator();
 type Stroke = number[][];
 
 export interface Coordinate {
-  x:number,
-  y:number,
+  x: number;
+  y: number;
 }
 
 interface Coordinates {
@@ -20,15 +20,20 @@ interface Coordinates {
 }
 
 export interface Element {
-  id: string;
+  id: number;
   type: string;
   x1: number;
   y1: number;
   x2: number;
   y2: number;
+  offsetX?: number;
+  offsetY?: number;
   roughElement?: any; // Adjust this type as per the actual type of roughElement
   points?: { x: number; y: number }[];
   text?: string;
+  position?: string;
+  xOffsets?:number;
+  yOffsets?:number;
 }
 
 export const getSvgPathFromStroke = (stroke: Stroke) => {
@@ -52,7 +57,7 @@ export const resizedCoordinates = (
   clientY: number,
   position: string,
   coordinates: Coordinates
-) => {
+): Coordinates => {
   const { x1, y1, x2, y2 } = coordinates;
   switch (position) {
     case "tl":
@@ -66,11 +71,11 @@ export const resizedCoordinates = (
     case "end":
       return { x1, y1, x2: clientX, y2: clientY };
     default:
-      return null; //should not really get here...
+      return { x1, y1, x2: clientX, y2: clientY }; 
   }
 };
 
-export const drawElement = (roughCanvas:RoughCanvas, context, element) => {
+export const drawElement = (roughCanvas: RoughCanvas, context, element) => {
   switch (element.type) {
     case "line":
     case "rectangle":
@@ -138,8 +143,7 @@ export const positionWithinElement = (
       const topRight = nearPoint(x, y, x2, y1, "tr");
       const bottomLeft = nearPoint(x, y, x1, y2, "bl");
       const bottomRight = nearPoint(x, y, x2, y2, "br");
-      const inside =
-        x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
+      const inside = x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
       return topLeft || topRight || bottomLeft || bottomRight || inside;
     case "pencil":
       if (points) {
@@ -159,7 +163,6 @@ export const positionWithinElement = (
       throw new Error(`Type not recognised: ${type}`);
   }
 };
-
 
 export const getElementAtPosition = (x: number, y: number, elements) => {
   return elements
@@ -203,13 +206,15 @@ export const cursorForPosition = (position: string) => {
 };
 
 export const createElement = (
-  id: string,
+  id: number,
   x1: number,
   y1: number,
   x2: number,
   y2: number,
-  type: string
-) : Element => {
+  type: string,
+  size: number,
+  color:string
+): Element => {
   switch (type) {
     case "line":
       return {
@@ -219,7 +224,7 @@ export const createElement = (
         x2,
         y2,
         type,
-        roughElement: generator.line(x1, y1, x2, y2),
+        roughElement: generator.line(x1, y1, x2, y2,{strokeWidth:size,stroke: color,}),
       };
     case "rectangle":
       return {
@@ -229,10 +234,10 @@ export const createElement = (
         x2,
         y2,
         type,
-        roughElement: generator.rectangle(x1, y1, x2 - x1, y2 - y1),
+        roughElement: generator.rectangle(x1, y1, x2 - x1, y2 - y1,{strokeWidth:size,stroke:color}),
       };
     case "pencil":
-      return { id, type, points: [{ x: x1, y: y1 }],x1,y1,x2:x1,y2:y1 };
+      return { id, type, points: [{ x: x1, y: y1 }], x1, y1, x2: x1, y2: y1 };
     case "text":
       return { id, type, x1, y1, x2, y2, text: "" };
     default:
@@ -242,3 +247,12 @@ export const createElement = (
 
 export const adjustmentRequired = (type) =>
   ["line", "rectangle"].includes(type);
+
+export const getRandomColor = () =>{
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}

@@ -1,4 +1,10 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  LegacyRef,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import rough from "roughjs/bundled/rough.esm";
 import {
   Coordinate,
@@ -9,10 +15,12 @@ import {
   cursorForPosition,
   drawElement,
   getElementAtPosition,
+  getRandomColor,
   resizedCoordinates,
 } from "../../util/utils";
 import usePressedKeys from "../../hooks/usePressedKeys";
 import { RoughCanvas } from "roughjs/bin/canvas";
+import { hsvaToHex } from "@uiw/color-convert";
 
 const Canvas = ({
   elements,
@@ -21,6 +29,8 @@ const Canvas = ({
   redo,
   tool,
   socket,
+  size,
+  color,
 }) => {
   const [action, setAction] = useState("none");
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
@@ -29,17 +39,34 @@ const Canvas = ({
     x: 0,
     y: 0,
   });
-  const [otherCursors, setOtherCursores] = useState([]);
-  const textAreaRef = useRef();
+  const [socketCoordinates, setSocketCoordinates] = useState(new Map());
+  const textAreaRef = useRef<LegacyRef<HTMLTextAreaElement>>();
   const pressedKeys = usePressedKeys();
 
-  const updateElement = (id, x1, y1, x2, y2, type, options) => {
+  const updateElement = (
+    id: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    type: string,
+    options?: any
+  ) => {
     const elementsCopy = [...elements];
 
     switch (type) {
       case "line":
       case "rectangle":
-        elementsCopy[id] = createElement(id, x1, y1, x2, y2, type);
+        elementsCopy[id] = createElement(
+          id,
+          x1,
+          y1,
+          x2,
+          y2,
+          type,
+          size,
+          hsvaToHex(color)
+        );
         break;
       case "pencil":
         elementsCopy[id].points = [
@@ -54,7 +81,16 @@ const Canvas = ({
           .measureText(options.text).width;
         const textHeight = 24;
         elementsCopy[id] = {
-          ...createElement(id, x1, y1, x1 + textWidth, y1 + textHeight, type),
+          ...createElement(
+            id,
+            x1,
+            y1,
+            x1 + textWidth,
+            y1 + textHeight,
+            type,
+            size,
+            hsvaToHex(color)
+          ),
           text: options.text,
         };
         break;
@@ -65,18 +101,18 @@ const Canvas = ({
   };
 
   useLayoutEffect(() => {
-    const canvas: HTMLCanvasElement  = document.getElementById("canvas") as HTMLCanvasElement;
-    const context :CanvasRenderingContext2D = canvas.getContext("2d")!;
-    const roughCanvas :RoughCanvas = rough.canvas(canvas);
-
+    const canvas: HTMLCanvasElement = document.getElementById(
+      "canvas"
+    ) as HTMLCanvasElement;
+    const context: CanvasRenderingContext2D = canvas.getContext("2d")!;
+    const roughCanvas: RoughCanvas = rough.canvas(canvas);
     context.clearRect(0, 0, canvas.width, canvas.height);
-
     context.save();
     context.translate(panOffset.x, panOffset.y);
 
     elements.forEach((element) => {
       if (action === "writing" && selectedElement!.id === element.id) return;
-      drawElement(roughCanvas, context, element);
+      drawElement(roughCanvas, context, element, size);
     });
     context.restore();
   }, [elements, action, selectedElement, panOffset]);
@@ -143,8 +179,12 @@ const Canvas = ({
       const element = getElementAtPosition(clientX, clientY, elements);
       if (element) {
         if (element.type === "pencil") {
-          const xOffsets = element.points.map((point) => clientX - point.x);
-          const yOffsets = element.points.map((point) => clientY - point.y);
+          const xOffsets = element.points.map(
+            (point: any) => clientX - point.x
+          );
+          const yOffsets = element.points.map(
+            (point: any) => clientY - point.y
+          );
           setSelectedElement({ ...element, xOffsets, yOffsets });
         } else {
           const offsetX = clientX - element.x1;
@@ -167,7 +207,9 @@ const Canvas = ({
         clientY,
         clientX,
         clientY,
-        tool
+        tool,
+        size,
+        hsvaToHex(color)
       );
       setElements((prevState) => [...prevState, element]);
       setSelectedElement(element);
@@ -176,20 +218,41 @@ const Canvas = ({
     }
   };
 
+  const updateSocketCoordinates = (socketId, x, y, cursorColor) => {
+    setSocketCoordinates((prevCoordinates) => {
+      const newCoordinates = new Map(prevCoordinates);
+      newCoordinates.set(socketId, { x, y, cursorColor });
+      return newCoordinates;
+    });
+  };
+
   useEffect(() => {
     if (socket.current) {
       socket.current.on("mm-recieve", (recievedObj) => {
-        console.log(recievedObj);
+        updateSocketCoordinates(
+          recievedObj.socketId,
+          recievedObj.clientX,
+          recievedObj.clientY,
+          recievedObj.cursorColor
+        );
+      });
+
+      socket.current.on("recieveThirdPartyDraw", (data) => {
+        console.log(data.tool);
+        const { id, x1, y1, x2, y2, tool } = data;
+        updateElement(id, x1, y1, x2, y2, tool);
       });
     }
   }, []);
 
   const handleMouseMove = (event) => {
     const { clientX, clientY } = getMouseCoordinates(event);
+
     socket.current.emit("mm-send", {
       socket: socket.current.id,
       clientX,
       clientY,
+      cursorColor: getRandomColor(),
     });
 
     if (action === "panning") {
@@ -212,26 +275,29 @@ const Canvas = ({
     if (action === "drawing") {
       const index = elements.length - 1;
       const { x1, y1 } = elements[index];
+      console.log(tool);
+      socket.current.emit("drawing", { index, x1, y1, clientX, clientY, tool });
       updateElement(index, x1, y1, clientX, clientY, tool);
     } else if (action === "moving") {
-      if (selectedElement.type === "pencil") {
-        const newPoints = selectedElement.points.map((_, index) => ({
-          x: clientX - selectedElement.xOffsets[index],
-          y: clientY - selectedElement.yOffsets[index],
+      if (selectedElement!.type === "pencil") {
+        const { xOffsets, yOffsets } = selectedElement!;
+        const newPoints = selectedElement?.points?.map((_, index) => ({
+          x: clientX - xOffsets![index],
+          y: clientY - yOffsets![index],
         }));
         const elementsCopy = [...elements];
-        elementsCopy[selectedElement.id] = {
-          ...elementsCopy[selectedElement.id],
+        elementsCopy[selectedElement!.id] = {
+          ...elementsCopy[selectedElement!.id],
           points: newPoints,
         };
         setElements(elementsCopy, true);
       } else {
-        const { id, x1, x2, y1, y2, type, offsetX, offsetY } = selectedElement;
+        const { id, x1, x2, y1, y2, type, offsetX, offsetY } = selectedElement!;
         const width = x2 - x1;
         const height = y2 - y1;
-        const newX1 = clientX - offsetX;
-        const newY1 = clientY - offsetY;
-        const options = type === "text" ? { text: selectedElement.text } : {};
+        const newX1 = clientX - (offsetX ?? 0);
+        const newY1 = clientY - (offsetY ?? 0);
+        const options = type === "text" ? { text: selectedElement!.text } : {};
         updateElement(
           id,
           newX1,
@@ -243,11 +309,11 @@ const Canvas = ({
         );
       }
     } else if (action === "resizing") {
-      const { id, type, position, ...coordinates } = selectedElement;
+      const { id, type, position, ...coordinates } = selectedElement!;
       const { x1, y1, x2, y2 } = resizedCoordinates(
         clientX,
         clientY,
-        position,
+        position!,
         coordinates
       );
       updateElement(id, x1, y1, x2, y2, type);
@@ -259,13 +325,12 @@ const Canvas = ({
     if (selectedElement) {
       if (
         selectedElement.type === "text" &&
-        clientX - selectedElement.offsetX === selectedElement.x1 &&
-        clientY - selectedElement.offsetY === selectedElement.y1
+        clientX - (selectedElement.offsetX ?? 0) === selectedElement.x1 &&
+        clientY - (selectedElement.offsetY ?? 0) === selectedElement.y1
       ) {
         setAction("writing");
         return;
       }
-
       const index = selectedElement.id;
       const { id, type } = elements[index];
       if (
@@ -284,14 +349,39 @@ const Canvas = ({
   };
 
   const handleBlur = (event) => {
-    const { id, x1, y1, type } = selectedElement;
+    const { id, x1, y1, type } = selectedElement!;
     setAction("none");
     setSelectedElement(null);
     updateElement(id, x1, y1, null, null, type, { text: event.target.value });
   };
 
   return (
-    <div>
+    <div style={{ width: window.innerWidth, height: window.innerHeight }}>
+      {Array.from(socketCoordinates.entries()).map(([socketId, cursor]) => (
+        <div
+          key={socketId}
+          style={{
+            position: "absolute",
+            left: cursor.x + "px",
+            top: cursor.y + "px",
+            width: 10,
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: cursor.cursorColor,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              lineHeight: 1,
+              display: "inline-block",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {socketId}
+          </span>
+        </div>
+      ))}
       {action === "writing" ? (
         <textarea
           ref={textAreaRef}
@@ -305,7 +395,7 @@ const Canvas = ({
             padding: 0,
             border: 0,
             outline: 0,
-            resize:"both",
+            resize: "both",
             overflow: "hidden",
             whiteSpace: "pre",
             background: "transparent",
@@ -328,8 +418,6 @@ const Canvas = ({
   );
 };
 
-Canvas.prototype = {
-  
-}
+Canvas.prototype = {};
 
 export default Canvas;

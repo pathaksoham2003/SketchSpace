@@ -35,12 +35,26 @@ io.on("connection", (socket) => {
   connections.push(socket.id);
   console.log("Array after connection ", connections);
 
+  // mouse movement
   socket.on("mm-send", (mousePosition) => {
     connections.forEach((socketId) => {
       if (socketId !== socket.id) {
-        socket.to(socketId).emit("mm-recieve", mousePosition);
+        socket.to(socketId).emit("mm-recieve",{socketId:socketId,...mousePosition});
       }
     });
+  });
+
+  // drawing
+
+
+  // chatting 
+  socket.on("drawing",(data)=>{
+    connections.forEach(socketId=>{
+      if(socket.id !== socketId){
+        socket.to(socketId).emit("recieveThirdPartyDraw",data);
+      }
+      
+    })
   });
 
   socket.on("recieve-msg", (data) => {

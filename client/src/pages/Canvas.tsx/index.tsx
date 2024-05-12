@@ -226,6 +226,14 @@ const Canvas = ({
     });
   };
 
+  if(socket.current){
+    socket.current.on("recieve-elements", (data) => {
+      const { id, x1, y1, x2, y2, tool } = data;
+      updateElement(id, x1, y1, x2, y2, tool);
+    });
+  
+  }
+  
   useEffect(() => {
     if (socket.current) {
       socket.current.on("mm-recieve", (recievedObj) => {
@@ -235,12 +243,6 @@ const Canvas = ({
           recievedObj.clientY,
           recievedObj.cursorColor
         );
-      });
-
-      socket.current.on("recieveThirdPartyDraw", (data) => {
-        console.log(data.tool);
-        const { id, x1, y1, x2, y2, tool } = data;
-        updateElement(id, x1, y1, x2, y2, tool);
       });
     }
   }, []);
@@ -275,8 +277,7 @@ const Canvas = ({
     if (action === "drawing") {
       const index = elements.length - 1;
       const { x1, y1 } = elements[index];
-      console.log(tool);
-      socket.current.emit("drawing", { index, x1, y1, clientX, clientY, tool });
+      // socket.current.emit("drawing", { index, x1, y1, clientX, clientY, tool });
       updateElement(index, x1, y1, clientX, clientY, tool);
     } else if (action === "moving") {
       if (selectedElement!.type === "pencil") {
@@ -338,6 +339,7 @@ const Canvas = ({
         adjustmentRequired(type)
       ) {
         const { x1, y1, x2, y2 } = adjustElementCoordinates(elements[index]);
+        socket.current.emit("send-elements",{id, x1, y1, x2, y2, type});
         updateElement(id, x1, y1, x2, y2, type);
       }
     }

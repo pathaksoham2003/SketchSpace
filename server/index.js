@@ -46,25 +46,57 @@ io.on("connection", (socket) => {
 
   // drawing
 
+  socket.on("createElement", (data)=>{
+    connections.forEach(socketId=>{
+      if(socket.id !== socketId){
+        socket.to(socketId).emit("onmousedown",data);
+      }
+    })
+  })
+
+  socket.on("send-mousemove",(data)=>{
+    connections.forEach(socketId=>{
+      if(socket.id!==socketId){
+        socket.to(socketId).emit("recieve-mouse-move",data);
+      }
+    })
+  })
+
+  socket.on("send-mouseup",(data)=>{
+    connections.forEach(socketId=>{
+      if(socket.id!==socketId){
+        socket.to(socketId).emit("recieve-mouseup",data);
+      }
+    })
+  })
+
+  socket.on("send-elements",(data)=>{
+    connections.forEach(socketId=>{
+      if(socket.id!==socketId){
+        socket.to(socketId).emit("recieve-elements",data);
+      }
+    })
+  })
 
   // chatting 
   socket.on("drawing",(data)=>{
+    console.log(data);
     connections.forEach(socketId=>{
       if(socket.id !== socketId){
         socket.to(socketId).emit("recieveThirdPartyDraw",data);
       }
-      
     })
   });
 
-  socket.on("recieve-msg", (data) => {
-    console.log(socket.id, "sent message :- ", data);
-    connections.forEach(socket);
+  socket.on("send-msg", (data) => {
+    connections.forEach(socketId => {
+      if(socket.id !== socketId){
+        socket.to(socketId).emit("recieve-msg",data);
+      }
+    });
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("A user has disconnected", socket.id);
     connections = connections.filter((item) => item !== socket.id);
-    console.log("Array after disconnection ", connections);
   });
 });

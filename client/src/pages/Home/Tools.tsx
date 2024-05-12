@@ -13,7 +13,7 @@ import {
 } from "react-feather";
 import { hsvaToHex } from "@uiw/color-convert";
 
-function Tools({ color, setColor, setTool, setSize, undo, redo }) {
+function Tools({ color, setColor, setTool, setSize, undo, redo, setChat }) {
   const [showWheel, setWheel] = useState(false);
   return (
     <Fragment>
@@ -64,7 +64,11 @@ function Tools({ color, setColor, setTool, setSize, undo, redo }) {
           defaultValue="3"
         ></input>
         <Edit2 size={25} onClick={() => setTool("pencil")} />
-        <Minus style={{transform:'rotate(-45deg)'}} size={25} onClick={() => setTool("line")} />
+        <Minus
+          style={{ transform: "rotate(-45deg)" }}
+          size={25}
+          onClick={() => setTool("line")}
+        />
         <Square size={25} onClick={() => setTool("rectangle")} />
         {/* <XSquare size={25} onClick={() => setTool("eraser")} /> */}
         <Type size={25} onClick={() => setTool("text")} />
@@ -72,7 +76,7 @@ function Tools({ color, setColor, setTool, setSize, undo, redo }) {
         <CornerUpRight size={25} onClick={redo} />
         <Move size={25} onClick={() => setTool("selection")} />
         <Download size={25} />
-        <MessageCircle size={25} />
+        <MessageCircle size={25} onClick={() => setChat(prev=>!prev)} />
       </div>
     </Fragment>
   );

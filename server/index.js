@@ -1,56 +1,35 @@
-import express from "express";
-import keycloak from "./middlewarre/keycloak.js";
-import cors from "cors";
-import testRoute from "./routes/menuItems.js";
-import { Server } from "socket.io";
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
 
 const app = express();
+app.use(cors({origin:"*"}))
 
-app.use(express.json());
 
-app.use(
-  cors({
-    origin: "*",
-  })
-);
-
-app.use(keycloak.middleware());
-
-app.use("/api", testRoute);
-
-const server = app.listen(8021, () => {
-  console.log("Server Started");
-});
-
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
-  },
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
 });
 
-let connections = [];
+app.use(express.static('client'));
 
-// Everything inside the below function will run for the sockets part
-io.on("connection", (socket) => {
-  connections.push(socket.id);
-  console.log("Array after connection ", connections);
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
 
-  socket.on("mm-send", (mousePosition) => {
-    connections.forEach((socketId) => {
-      if (socketId !== socket.id) {
-        socket.to(socketId).emit("mm-recieve", mousePosition);
-      }
-    });
+  socket.on('drawing', (data) => {
+    socket.broadcast.emit('drawing', data); // send to all others
   });
 
-  socket.on("recieve-msg", (data) => {
-    console.log(socket.id, "sent message :- ", data);
-    connections.forEach(socket);
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
   });
+});
 
-  socket.on("disconnect", (reason) => {
-    console.log("A user has disconnected", socket.id);
-    connections = connections.filter((item) => item !== socket.id);
-    console.log("Array after disconnection ", connections);
-  });
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });

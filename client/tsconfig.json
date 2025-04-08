@@ -25,6 +25,7 @@
   // },
   /* To run without the errors*/
   "compilerOptions": {
+    "jsx": "react",
     "target": "ES2020",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -38,7 +39,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
     "ignoreDeprecations": "5.0",
-    "suppressImplicitAnyIndexErrors": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],

@@ -43,7 +43,7 @@ To enable email notifications (e.g., verification codes), generate a Google App 
 
 🔐 **How to generate App Password for Gmail SMTP:**
 - 📖 [Official Google Documentation](https://support.google.com/mail/answer/185833?hl=en)
-- 📺 [YouTube Tutorial](https://www.youtube.com/watch?v=uv3W9QEz6xE)
+- 📺 [YouTube Tutorial](https://www.youtube.com/watch?v=hXiPshHn9Pw)
 
 Update `.env`:
 ```env

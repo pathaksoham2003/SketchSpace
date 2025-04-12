@@ -113,6 +113,7 @@ node dist/index.js
 ```bash
 cd ts_client
 npm install
+tsc
 npm run dev
 ```
 

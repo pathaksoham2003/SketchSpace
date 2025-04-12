@@ -1,0 +1,17 @@
+PORT = 3000
+
+MONGO_DB_URL=mongodb://root:root@localhost:27018/sketch?authSource=admin
+
+FRONTEND_URL=http://localhost:5173/
+
+USE_MAILING=true
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=YOUR_GMAIL
+SMTP_PASS=YOUR_APP_PASSWORD_GMAIL
+FROM_EMAIL=YOUR_GMAIL
+
+KEYCLOAK_DOMAIN=localhost:8080
+KEYCLOAK_REALM=master
+KEYCLOAK_AUDIENCE=account

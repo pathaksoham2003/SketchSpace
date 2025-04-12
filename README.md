@@ -10,4 +10,15 @@ To set up the project on your local machine:
 
 ---
 
+### 🛡️ Keycloak Authentication
+![Keycloak](assets/KeyCloak.png)
+
+### 🎨 Created Boards and Shared Boards
+![Board](assets/BoardShared.png)
+
+### ✏️ Email Invitation in Action
+![Email](assets/EmailSent.png)
+
+### 💬 Real-time Chat
+![Chat](assets/sketchSpace.png)
 
